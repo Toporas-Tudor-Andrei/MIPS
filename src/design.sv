@@ -82,7 +82,7 @@ module RegMem(input[4:0] Rreg1,
               output[31:0] Rdata1,
               output[31:0] Rdata2);
   
-  reg[31:0] regBach[31:0];
+  reg[31:0] regBach[0:31];
   integer i;
   initial begin
     for(i = 0; i < 32; i = i + 1)
@@ -100,20 +100,79 @@ module RegMem(input[4:0] Rreg1,
   
 endmodule
 
-//TODO: add clk, and matchinput addr with mem
 module instrMem(input[31:0] Raddr,
-                output[31:0] instr);
+                input clk,
+                output reg[31:0] instr);
   
-  reg [31:0] mem[0:3];
+  reg [7:0] mem[0:31];
   integer i;
   initial begin
-    for(i = 0; i < 4; i = i + 1)
-      mem[i] = 32'h0;
+    for(i = 0; i < 32; i = i + 1)
+      mem[i] = 8'h0;
     $readmemh("instr.txt",mem);
   end
-  assign instr = mem[0];
+  always@(posedge clk)begin
+    instr = mem[Raddr];
+  end
 endmodule
-/*
-module dataMem();
+
+module dataMem(input[31:0] addr,
+               input[31:0] Wdata,
+               input MemWrite,
+               input MemRead,
+               input clk,
+               output reg[31:0] Rdata);
   
+  reg[7:0] dmem[0:31];
+  
+  integer i;
+  initial begin
+    for(i = 0; i < 32; i = i + 1)
+      dmem[i] = 8'h0;
+  end
+  
+  always@(posedge clk)begin
+    if(MemWrite) begin
+      dmem[addr] = Wdata[7:0];
+      dmem[addr+1] = Wdata[15:8];
+      dmem[addr+2] = Wdata[23:16];
+      dmem[addr+3] = Wdata[31:24];
+    end
+    if(MemRead)begin
+      Rdata = {dmem[addr+3],dmem[addr+2],dmem[addr+1],dmem[addr]};
+    end
+  end
+endmodule
+
+module control(input[5:0] opcode,
+               input clk,
+               output reg RegDst,
+               output reg Jump,
+               output reg Branch,
+               output reg MemRead,
+               output reg MemtoReg,
+               output reg[1:0] ALUOp,
+               output reg MemWrite,
+               output reg ALUSrc,
+               output reg RegWrite);
+  
+  reg [9:0] controls;
+  
+  initial begin
+    controls = 10'b0000000000;
+  end
+  
+  assign {RegDst, Jump, Branch, MemRead, MemtoReg, ALUOp, MemWrite, ALUSrc, RegWrite} = controls;
+  
+  always@(posedge clk)begin
+    case(opcode)//TODO: implement more instructions
+      6'b000000: controls <= 10'b1_0_0_0_0_10_0_0_1;//R Type
+      6'b100011: controls <= 10'b0_0_0_0_1_00_0_1_1;//LW
+      6'b101011: controls <= 10'b0_0_0_0_0_00_1_1_0;//SW
+    endcase
+  end
+endmodule
+
+/*module mips();
+  wire[31:0] pc_in, pc_out, instr_out, imm, reg1, reg2, ALU_out, Mem_out, regWdata, 
 endmodule*/
