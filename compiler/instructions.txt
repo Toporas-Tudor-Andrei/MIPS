@@ -1,0 +1,15 @@
+start:
+addi $s2, $zero, 12
+addi $s0, $zero, 13
+sw $s0, 0 ($zero)
+lw $s1, 0 ($zero)
+sw $s2, 0 ($zero)
+lw $s1, 0 ($zero)
+beq $s1, $s2, skip
+j start
+skip:
+add $s0, $s1, $s2
+addi $s3, $zero, 1
+xor $s3, $s1, $s2
+end:
+j end
